@@ -1,8 +1,13 @@
-const express = require('express');
-const path = require('path');
-const fs = require('node:fs')
-const {v4, uuidv4 } = require('uuid');  
+const express = require("express");
+const path = require("path");
+const fs = require("node:fs");
+const { v4: uuidv4 } = require("uuid");
 const PORT = process.env.PORT || 3001;
+const {
+  readFromFile,
+  readAndAppend,
+  writeToFile,
+} = require("./helpers/fsUtils");
 
 const app = express();
 
@@ -14,20 +19,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 //app.use('/api', api);
 
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 // GET Route for homepage
-app.get('/', (req, res) =>
-  res.sendFile(path.join(__dirname, '/public/index.html'))
+app.get("/", (req, res) =>
+  res.sendFile(path.join(__dirname, "/public/index.html"))
 );
 
 // GET Route for feedback page
-app.get('/notes', (req, res) =>
-  res.sendFile(path.join(__dirname, '/public/notes.html'))
+app.get("/notes", (req, res) =>
+  res.sendFile(path.join(__dirname, "/public/notes.html"))
 );
 
-app.get('/api/notes', (req, res) => {
-  fs.readFile('./db/db.json', (err, data) => {
+app.get("/api/notes", (req, res) => {
+  fs.readFile("./db/db.json", (err, data) => {
     if (err) {
       console.error(err);
       res.send(err);
@@ -35,9 +40,9 @@ app.get('/api/notes', (req, res) => {
     console.log(data);
     res.send(data);
   });
-})
+});
 
-app.post('/api/notes', (req, res) => {
+app.post("/api/notes", (req, res) => {
   console.log(req.body);
 
   const { title, text } = req.body;
@@ -49,13 +54,18 @@ app.post('/api/notes', (req, res) => {
       note_id: uuidv4(),
     };
 
-    
+    readAndAppend(newNote, './db/db.json');
+    res.json('Note added successfully');
+  } else {
+    res.error('Error in adding note');
   }
-})
+});
+
+
 
 // Wildcard route to direct users to a 404 page
-app.get('*', (req, res) =>
-  res.sendFile(path.join(__dirname, 'public/index.html'))
+app.get("*", (req, res) =>
+  res.sendFile(path.join(__dirname, "public/index.html"))
 );
 
 app.listen(PORT, () =>
